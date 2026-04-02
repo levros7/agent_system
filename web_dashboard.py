@@ -25,7 +25,11 @@ class WebDashboard:
             "Agent2": {"running": True, "last_update": None, "message_count": 0},
             "Agent3": {"running": True, "last_update": None, "message_count": 0},
             "Agent4": {"running": True, "last_update": None, "message_count": 0},
-            "WarMonitorAgent": {"running": True, "last_update": None, "message_count": 0},
+            "WarBTCAgent":      {"running": True, "last_update": None, "message_count": 0},
+            "WarSP500Agent":    {"running": True, "last_update": None, "message_count": 0},
+            "WarOilAgent":      {"running": True, "last_update": None, "message_count": 0},
+            "WarNewsAgent":     {"running": True, "last_update": None, "message_count": 0},
+            "WarTelegramAgent": {"running": True, "last_update": None, "message_count": 0},
         }
         self.war_metrics = {}
         
@@ -432,7 +436,7 @@ class WebDashboard:
             </div>
             
             <script>
-                const AGENTS = ["Agent1", "Agent2", "Agent3", "Agent4", "WarMonitorAgent"];
+                const AGENTS = ["Agent1", "Agent2", "Agent3", "Agent4", "WarBTCAgent", "WarSP500Agent", "WarOilAgent", "WarNewsAgent", "WarTelegramAgent"];
                 let messageCount = 0;
                 
                 function formatTime(timestamp) {

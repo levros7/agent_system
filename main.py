@@ -11,7 +11,12 @@ from agent1 import Agent1
 from agent2 import Agent2
 from agent3 import Agent3
 from agent4 import Agent4
-from war_monitor_agent import WarMonitorAgent
+from war_shared_state import WarSharedState
+from war_btc_agent import WarBTCAgent
+from war_sp500_agent import WarSP500Agent
+from war_oil_agent import WarOilAgent
+from war_news_agent import WarNewsAgent
+from war_telegram_agent import WarTelegramAgent
 
 
 def main():
@@ -42,7 +47,14 @@ def main():
     manager.register_agent("Agent2", Agent2())
     manager.register_agent("Agent3", Agent3())
     manager.register_agent("Agent4", Agent4())
-    manager.register_agent("WarMonitorAgent", WarMonitorAgent())
+
+    # War Monitor team — shared state connects all 5 agents
+    war_state = WarSharedState()
+    manager.register_agent("WarBTCAgent",      WarBTCAgent(war_state))
+    manager.register_agent("WarSP500Agent",    WarSP500Agent(war_state))
+    manager.register_agent("WarOilAgent",      WarOilAgent(war_state))
+    manager.register_agent("WarNewsAgent",     WarNewsAgent(war_state))
+    manager.register_agent("WarTelegramAgent", WarTelegramAgent(war_state))
     
     # Start manager (runs all agents as daemon threads)
     manager_thread = threading.Thread(target=manager.run, daemon=True)
