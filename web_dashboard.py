@@ -94,7 +94,7 @@ class WebDashboard:
                 # Update agent status
                 agent_name = message.get("agent")
                 if agent_name in self.agent_status:
-                    now = datetime.now().isoformat()
+                    now = datetime.utcnow().isoformat() + 'Z'
                     self.agent_status[agent_name]["last_update"] = now
                     self.agent_status[agent_name]["message_count"] += 1
                     self.agent_status[agent_name]["last_data"] = message.get("data", "")

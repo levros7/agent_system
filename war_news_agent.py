@@ -14,7 +14,7 @@ GNEWS_KEY = os.getenv('GNEWS_API_KEY', '')
 class WarNewsAgent:
     def __init__(self, shared_state):
         self.name = 'WarNewsAgent'
-        self.interval = 300  # every 5 minutes
+        self.interval = 1800  # every 30 minutes (GNews free = 100 req/day)
         self.state = shared_state
 
     def run(self, message_queue):
@@ -56,7 +56,10 @@ class WarNewsAgent:
                     })
 
             except Exception as e:
-                print(f'[{self.name}] Error: {e}')
-                message_queue.put({'agent': self.name, 'type': 'error', 'data': str(e), 'timestamp': time.time()})
+                err = str(e)
+                print(f'[{self.name}] Error: {err}')
+                # 403 = rate limit hit, just wait and retry
+                status = 'rate-limited (free tier)' if '403' in err else err
+                message_queue.put({'agent': self.name, 'type': 'warning', 'data': f'GNews: {status}', 'timestamp': time.time()})
 
             time.sleep(self.interval)
