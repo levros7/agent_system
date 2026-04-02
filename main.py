@@ -4,6 +4,7 @@ Starts the manager which coordinates all agents and a web dashboard.
 """
 import threading
 import time
+import os
 from queue import Queue
 from manager_agent import ManagerAgent
 from web_dashboard import WebDashboard
@@ -25,7 +26,7 @@ def main():
     dashboard_queue = Queue()  # For dashboard to consume messages
     
     # Create and start web dashboard
-    dashboard = WebDashboard(dashboard_queue, port=5000)
+    dashboard = WebDashboard(dashboard_queue, port=int(os.environ.get('PORT', 5000)))
     
     # Start dashboard message processor
     processor_thread = threading.Thread(target=dashboard.process_messages, daemon=True)
