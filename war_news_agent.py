@@ -18,7 +18,7 @@ MISSILE_KEYWORDS   = ['missile', 'ballistic', 'rocket', 'drone', 'barrage', 'sal
 class WarNewsAgent:
     def __init__(self, shared_state):
         self.name     = 'WarNewsAgent'
-        self.interval = 1800   # 30 min — GNews free = 100 req/day
+        self.interval = 7200   # 2 hours — 12 req/day
         self.state    = shared_state
         self._seen    = set()  # deduplication: seen headline titles
 
@@ -31,7 +31,7 @@ class WarNewsAgent:
         return any(k in t for k in MISSILE_KEYWORDS)
 
     def run(self, message_queue):
-        print(f'[{self.name}] Started — fetching war news every {self.interval}s')
+        print(f'[{self.name}] Started — fetching war news every {self.interval//3600}h (budget: ~12 req/day)')
         while True:
             try:
                 if not GNEWS_KEY:
