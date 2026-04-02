@@ -21,17 +21,18 @@ class WebDashboard:
         
         # Agent status tracking
         self.agent_status = {
-            "Agent1": {"running": True, "last_update": None, "message_count": 0},
-            "Agent2": {"running": True, "last_update": None, "message_count": 0},
-            "Agent3": {"running": True, "last_update": None, "message_count": 0},
-            "Agent4": {"running": True, "last_update": None, "message_count": 0},
-            "WarBTCAgent":      {"running": True, "last_update": None, "message_count": 0},
-            "WarSP500Agent":    {"running": True, "last_update": None, "message_count": 0},
-            "WarOilAgent":      {"running": True, "last_update": None, "message_count": 0},
-            "WarNewsAgent":     {"running": True, "last_update": None, "message_count": 0},
-            "WarTelegramAgent": {"running": True, "last_update": None, "message_count": 0},
+            "Agent1":           {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "Agent2":           {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "Agent3":           {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "Agent4":           {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarBTCAgent":      {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarSP500Agent":    {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarOilAgent":      {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarNewsAgent":     {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarTelegramAgent": {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
         }
         self.war_metrics = {}
+        self.agent_logs = {name: deque(maxlen=10) for name in self.agent_status}
         
         # Set up routes
         self.setup_routes()
@@ -66,6 +67,10 @@ class WebDashboard:
         def get_war_metrics():
             return jsonify(self.war_metrics)
 
+        @self.app.route('/api/agent-logs')
+        def get_agent_logs():
+            return jsonify({k: list(v) for k, v in self.agent_logs.items()})
+
         @self.app.route('/api/clear-history', methods=['POST'])
         def clear_history():
             """Clear message history"""
@@ -89,10 +94,21 @@ class WebDashboard:
                 # Update agent status
                 agent_name = message.get("agent")
                 if agent_name in self.agent_status:
-                    self.agent_status[agent_name]["last_update"] = datetime.now().isoformat()
+                    now = datetime.now().isoformat()
+                    self.agent_status[agent_name]["last_update"] = now
                     self.agent_status[agent_name]["message_count"] += 1
-                if agent_name == "WarMonitorAgent" and "metrics" in message:
-                    self.war_metrics = message["metrics"]
+                    self.agent_status[agent_name]["last_data"] = message.get("data", "")
+                    self.agent_status[agent_name]["last_type"] = message.get("type", "")
+                    self.agent_logs[agent_name].append({
+                        "time": datetime.now().strftime("%H:%M:%S"),
+                        "type": message.get("type", ""),
+                        "data": message.get("data", ""),
+                    })
+                if "metrics" in message and message.get("agent", "").startswith("War"):
+                    if message.get("type") in ("btc_price", "sp500_price", "oil_price"):
+                        key = message["agent"].replace("War", "").replace("Agent", "").lower()
+                        self.war_metrics[key] = message["metrics"]
+                        self.war_metrics["war_day"] = (datetime.now() - datetime(2026, 2, 28)).days + 1
                     
             except:
                 pass
@@ -385,200 +401,186 @@ class WebDashboard:
                     </div>
                 </header>
                 
-                <div id="war-panel" style="background:rgba(20,10,10,0.92);border:1px solid #f85149;border-radius:12px;padding:20px;margin-bottom:20px;display:none">
-                  <h2 style="color:#f85149;font-size:16px;letter-spacing:3px;margin-bottom:14px">⚔️ WAR MONITOR — 2026 IRAN WAR</h2>
-                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
-                    <div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:8px;padding:12px;text-align:center">
-                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">WAR DAY</div>
-                      <div style="font-size:28px;font-weight:700;color:#f85149" id="w-day">—</div>
-                    </div>
-                    <div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:8px;padding:12px;text-align:center">
-                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">BITCOIN</div>
-                      <div style="font-size:18px;font-weight:700;color:#3fb950" id="w-btc">—</div>
-                      <div style="font-size:11px;color:#8b949e" id="w-btc-c">—</div>
-                    </div>
-                    <div style="background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.3);border-radius:8px;padding:12px;text-align:center">
-                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">S&amp;P 500</div>
-                      <div style="font-size:18px;font-weight:700;color:#58a6ff" id="w-sp">—</div>
-                      <div style="font-size:11px;color:#8b949e" id="w-sp-c">—</div>
-                    </div>
-                    <div style="background:rgba(227,105,58,0.1);border:1px solid rgba(227,105,58,0.3);border-radius:8px;padding:12px;text-align:center">
-                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">WTI OIL</div>
-                      <div style="font-size:18px;font-weight:700;color:#e3693a" id="w-oil">—</div>
-                      <div style="font-size:11px;color:#8b949e" id="w-oil-c">—</div>
-                    </div>
-                    <div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:8px;padding:12px;text-align:center">
-                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">HORMUZ</div>
-                      <div style="font-size:14px;font-weight:700;color:#f85149">CLOSED</div>
-                    </div>
-                    <div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:8px;padding:12px;text-align:center">
-                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">CEASEFIRE</div>
-                      <div style="font-size:14px;font-weight:700;color:#f85149">NONE</div>
-                    </div>
-                  </div>
-                  <div style="margin-top:10px;text-align:right">
-                    <a href="https://vigilant-forgiveness-production-6c0f.up.railway.app" target="_blank"
-                       style="color:#58a6ff;font-size:11px;text-decoration:none">🌐 Open Live Dashboard →</a>
-                  </div>
-                </div>
+                <style>
+                  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+                  body { background:#080c10; color:#e6edf3; font-family:'SF Mono','Fira Code',monospace; }
+                  .section-label { font-size:10px;letter-spacing:3px;color:#8b949e;padding:14px 0 8px;border-bottom:1px solid #21262d;margin-bottom:12px }
+                </style>
 
-                <div class="agents-section" id="agents-container"></div>
+                <!-- War Monitor Team -->
+                <div class="section-label">⚔️ WAR MONITOR TEAM</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:20px" id="war-agents"></div>
 
-                <div class="messages-section">
-                    <div class="messages-header">
-                        <h2>📋 Message Log</h2>
-                        <button class="clear-btn" onclick="clearHistory()">Clear History</button>
+                <!-- System Agents -->
+                <div class="section-label">🤖 SYSTEM AGENTS</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:20px" id="sys-agents"></div>
+
+                <!-- Live Activity Feed -->
+                <div style="background:#0d1117;border:1px solid #21262d;border-radius:10px;overflow:hidden">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #21262d">
+                        <span style="font-size:10px;letter-spacing:3px;color:#8b949e">📡 LIVE ACTIVITY FEED</span>
+                        <button onclick="clearHistory()" style="background:#f85149;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:10px">CLEAR</button>
                     </div>
-                    <div class="message-log" id="message-log">
-                        <div class="empty-state">Waiting for messages...</div>
-                    </div>
+                    <div id="activity-feed" style="max-height:320px;overflow-y:auto;font-family:monospace;font-size:11px"></div>
                 </div>
             </div>
             
             <script>
-                const AGENTS = ["Agent1", "Agent2", "Agent3", "Agent4", "WarBTCAgent", "WarSP500Agent", "WarOilAgent", "WarNewsAgent", "WarTelegramAgent"];
-                let messageCount = 0;
-                
-                function formatTime(timestamp) {
-                    if (!timestamp) return "--:--";
-                    try {
-                        const date = new Date(timestamp);
-                        return date.toLocaleTimeString();
-                    } catch {
-                        return timestamp;
-                    }
+                const ALL_AGENTS   = ["Agent1","Agent2","Agent3","Agent4"];
+                const WAR_AGENTS   = ["WarBTCAgent","WarSP500Agent","WarOilAgent","WarNewsAgent","WarTelegramAgent"];
+                const AGENT_ICONS  = {
+                    Agent1:"🔧", Agent2:"📊", Agent3:"🔍", Agent4:"📋",
+                    WarBTCAgent:"₿", WarSP500Agent:"📈", WarOilAgent:"🛢",
+                    WarNewsAgent:"📰", WarTelegramAgent:"📡"
+                };
+                const AGENT_DESC = {
+                    Agent1:"Task Processing", Agent2:"Data Collection",
+                    Agent3:"Analysis", Agent4:"Reporting",
+                    WarBTCAgent:"Bitcoin · Binance API", WarSP500Agent:"S&P 500 · Yahoo Finance",
+                    WarOilAgent:"WTI Oil · Yahoo Finance", WarNewsAgent:"War Headlines · GNews",
+                    WarTelegramAgent:"Alerts & Briefings · Telegram"
+                };
+
+                let agentLogs = {};
+                let lastActivity = {};
+
+                function timeSince(iso) {
+                    if (!iso) return 'never';
+                    const secs = Math.floor((Date.now() - new Date(iso)) / 1000);
+                    if (secs < 5)  return 'just now';
+                    if (secs < 60) return secs + 's ago';
+                    return Math.floor(secs/60) + 'm ago';
                 }
-                
-                function updateAgentStatus() {
-                    fetch('/api/status')
-                        .then(r => r.json())
-                        .then(data => {
-                            const container = document.getElementById('agents-container');
-                            let activeCount = 0;
-                            
-                            AGENTS.forEach(agent => {
-                                const status = data[agent];
-                                if (status.running) activeCount++;
-                                
-                                let card = document.getElementById(`card-${agent}`);
-                                if (!card) {
-                                    card = document.createElement('div');
-                                    card.id = `card-${agent}`;
-                                    card.className = 'agent-card';
-                                    container.appendChild(card);
-                                }
-                                
-                                const running = status.running;
-                                card.className = `agent-card ${!running ? 'disabled' : ''}`;
-                                
-                                card.innerHTML = `
-                                    <div class="agent-header">
-                                        <span class="agent-title">
-                                            <span class="status-badge ${!running ? 'offline' : ''}"></span>
-                                            ${agent}
-                                        </span>
-                                        <button class="agent-toggle ${!running ? 'off' : ''}" 
-                                                onclick="toggleAgent('${agent}')">
-                                            ${running ? 'ON' : 'OFF'}
-                                        </button>
-                                    </div>
-                                    <div class="agent-info">
-                                        <div class="info-item">
-                                            <div class="info-label">Messages Sent</div>
-                                            <div class="info-value">${status.message_count}</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">Last Update</div>
-                                            <div class="info-value time">${formatTime(status.last_update)}</div>
-                                        </div>
-                                    </div>
-                                `;
-                            });
-                            
-                            document.getElementById('active-count').textContent = activeCount;
-                        });
+
+                function typeColor(t) {
+                    if (!t) return '#8b949e';
+                    if (t.includes('error'))   return '#f85149';
+                    if (t.includes('alert') || t.includes('briefing')) return '#d29922';
+                    if (t.includes('btc') || t.includes('sp500') || t.includes('oil')) return '#3fb950';
+                    if (t.includes('news'))    return '#58a6ff';
+                    if (t.includes('telegram')) return '#bc8cff';
+                    return '#8b949e';
                 }
-                
-                function updateMessageLog() {
-                    fetch('/api/history')
-                        .then(r => r.json())
-                        .then(messages => {
-                            const log = document.getElementById('message-log');
-                            messageCount = messages.length;
-                            document.getElementById('message-count').textContent = messageCount;
-                            
-                            if (messages.length === 0) {
-                                log.innerHTML = '<div class="empty-state">Waiting for messages...</div>';
-                                return;
-                            }
-                            
-                            log.innerHTML = messages.map(msg => {
-                                const time = formatTime(msg.timestamp);
-                                return `
-                                    <div class="log-entry">
-                                        <span class="log-timestamp">[${time}]</span>
-                                        <span class="log-agent">${msg.agent}</span>
-                                        <span class="log-type">(${msg.type})</span>
-                                        <span class="log-data">: ${msg.data}</span>
+
+                function renderAgentCard(agent, status, logs) {
+                    const running  = status.running;
+                    const isActive = status.last_update && (Date.now() - new Date(status.last_update)) < 5000;
+                    const icon     = AGENT_ICONS[agent] || '🤖';
+                    const desc     = AGENT_DESC[agent] || '';
+                    const logRows  = (logs || []).slice().reverse().map(l => `
+                        <div style="display:flex;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                            <span style="color:#555;min-width:56px;font-size:10px">${l.time}</span>
+                            <span style="color:${typeColor(l.type)};min-width:80px;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.type}</span>
+                            <span style="color:#ccc;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${l.data}</span>
+                        </div>`).join('') || '<div style="color:#444;font-size:10px;padding:4px 0">No activity yet...</div>';
+
+                    return `
+                        <div id="card-${agent}" style="
+                            background:#0d1117;border-radius:10px;padding:16px;
+                            border:1px solid ${isActive ? typeColor(status.last_type) : '#21262d'};
+                            box-shadow:${isActive ? '0 0 12px ' + typeColor(status.last_type) + '44' : 'none'};
+                            transition:all 0.4s;
+                        ">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                                <div style="display:flex;align-items:center;gap:10px">
+                                    <span style="font-size:20px">${icon}</span>
+                                    <div>
+                                        <div style="font-weight:700;font-size:13px;color:#e6edf3">${agent}</div>
+                                        <div style="font-size:10px;color:#8b949e">${desc}</div>
                                     </div>
-                                `;
-                            }).reverse().join('');
-                            
-                            // Update last update time
-                            const lastMsg = messages[messages.length - 1];
-                            document.getElementById('last-update').textContent = formatTime(lastMsg.timestamp);
-                        });
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <div style="
+                                        width:8px;height:8px;border-radius:50%;
+                                        background:${running ? (isActive ? typeColor(status.last_type) : '#3fb950') : '#f85149'};
+                                        box-shadow:${isActive ? '0 0 8px ' + typeColor(status.last_type) : 'none'};
+                                        ${isActive ? 'animation:pulse-dot 0.8s ease-in-out infinite' : ''}
+                                    "></div>
+                                    <button onclick="toggleAgent('${agent}')" style="
+                                        background:${running ? '#21262d' : '#f85149'};color:${running ? '#8b949e' : '#fff'};
+                                        border:1px solid #30363d;padding:3px 10px;border-radius:4px;
+                                        cursor:pointer;font-size:10px;letter-spacing:1px
+                                    ">${running ? 'ON' : 'OFF'}</button>
+                                </div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                                <div style="background:#161b22;border-radius:6px;padding:8px;text-align:center">
+                                    <div style="font-size:9px;color:#8b949e;letter-spacing:1px">MESSAGES</div>
+                                    <div style="font-size:20px;font-weight:700;color:#e6edf3">${status.message_count}</div>
+                                </div>
+                                <div style="background:#161b22;border-radius:6px;padding:8px;text-align:center">
+                                    <div style="font-size:9px;color:#8b949e;letter-spacing:1px">LAST ACTIVE</div>
+                                    <div style="font-size:12px;font-weight:600;color:${isActive ? typeColor(status.last_type) : '#8b949e'}">${timeSince(status.last_update)}</div>
+                                </div>
+                            </div>
+                            ${status.last_data ? `<div style="background:#161b22;border-radius:6px;padding:8px;margin-bottom:10px;font-size:11px;color:#3fb950;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">▶ ${status.last_data}</div>` : ''}
+                            <div style="background:#0a0e13;border-radius:6px;padding:8px;max-height:130px;overflow-y:auto;font-family:monospace">
+                                <div style="font-size:9px;color:#555;letter-spacing:1px;margin-bottom:4px">ACTIVITY LOG</div>
+                                ${logRows}
+                            </div>
+                        </div>`;
                 }
-                
+
+                function updateDashboard() {
+                    Promise.all([
+                        fetch('/api/status').then(r => r.json()),
+                        fetch('/api/agent-logs').then(r => r.json()),
+                        fetch('/api/history').then(r => r.json()),
+                    ]).then(([status, logs, history]) => {
+
+                        // Stats
+                        const active = Object.values(status).filter(s => s.running).length;
+                        document.getElementById('active-count').textContent = active;
+                        document.getElementById('message-count').textContent = history.length;
+                        if (history.length) {
+                            const last = history[history.length - 1];
+                            document.getElementById('last-update').textContent =
+                                last.timestamp ? new Date(last.timestamp * 1000).toLocaleTimeString() : '--';
+                        }
+
+                        // Agent cards — System agents
+                        const sysContainer = document.getElementById('sys-agents');
+                        sysContainer.innerHTML = ALL_AGENTS.map(a =>
+                            renderAgentCard(a, status[a] || {}, logs[a])
+                        ).join('');
+
+                        // Agent cards — War Monitor team
+                        const warContainer = document.getElementById('war-agents');
+                        warContainer.innerHTML = WAR_AGENTS.map(a =>
+                            renderAgentCard(a, status[a] || {}, logs[a])
+                        ).join('');
+
+                        // Global activity feed
+                        const feed = document.getElementById('activity-feed');
+                        if (history.length === 0) {
+                            feed.innerHTML = '<div style="color:#444;padding:20px;text-align:center">Waiting for activity...</div>';
+                        } else {
+                            feed.innerHTML = [...history].reverse().map(msg => {
+                                const t = msg.timestamp ? new Date(msg.timestamp * 1000).toLocaleTimeString() : '';
+                                const c = typeColor(msg.type);
+                                return `<div style="display:flex;gap:10px;padding:6px 8px;border-bottom:1px solid #161b22;align-items:flex-start">
+                                    <span style="color:#555;font-size:10px;min-width:58px;padding-top:1px">${t}</span>
+                                    <span style="color:${c};font-size:10px;min-width:100px;font-weight:600">${msg.agent || ''}</span>
+                                    <span style="color:#666;font-size:10px;min-width:90px">${msg.type || ''}</span>
+                                    <span style="color:#aaa;font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${msg.data || ''}</span>
+                                </div>`;
+                            }).join('');
+                        }
+                    }).catch(() => {});
+                }
+
                 function toggleAgent(agent) {
-                    fetch(`/api/agent/${agent}/toggle`)
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.success) {
-                                updateAgentStatus();
-                            }
-                        });
+                    fetch(`/api/agent/${agent}/toggle`).then(r => r.json()).then(updateDashboard);
                 }
-                
+
                 function clearHistory() {
-                    if (confirm('Clear all message history?')) {
-                        fetch('/api/clear-history', { method: 'POST' })
-                            .then(r => r.json())
-                            .then(data => {
-                                if (data.success) {
-                                    updateMessageLog();
-                                }
-                            });
+                    if (confirm('Clear all activity history?')) {
+                        fetch('/api/clear-history', { method: 'POST' }).then(updateDashboard);
                     }
                 }
-                
-                function updateWarPanel() {
-                    fetch('/api/war-metrics')
-                        .then(r => r.json())
-                        .then(m => {
-                            if (!m.war_day) return;
-                            document.getElementById('war-panel').style.display = 'block';
-                            document.getElementById('w-day').textContent = m.war_day;
-                            const fmt = (n) => n ? '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
-                            const chg = (n) => n ? (n >= 0 ? '▲ ' : '▼ ') + Math.abs(n).toFixed(2) + '%' : '—';
-                            document.getElementById('w-btc').textContent  = fmt(m.btc);
-                            document.getElementById('w-btc-c').textContent = chg(m.btc_change);
-                            document.getElementById('w-sp').textContent   = fmt(m.sp500);
-                            document.getElementById('w-sp-c').textContent  = chg(m.sp500_change);
-                            document.getElementById('w-oil').textContent  = fmt(m.oil);
-                            document.getElementById('w-oil-c').textContent = chg(m.oil_change);
-                        }).catch(() => {});
-                }
 
-                // Initial load
-                updateAgentStatus();
-                updateMessageLog();
-                updateWarPanel();
-
-                // Auto-refresh every 2 seconds
-                setInterval(updateAgentStatus, 2000);
-                setInterval(updateMessageLog, 2000);
-                setInterval(updateWarPanel, 60000);
+                updateDashboard();
+                setInterval(updateDashboard, 2000);
             </script>
         </body>
         </html>
