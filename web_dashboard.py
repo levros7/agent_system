@@ -24,8 +24,10 @@ class WebDashboard:
             "Agent1": {"running": True, "last_update": None, "message_count": 0},
             "Agent2": {"running": True, "last_update": None, "message_count": 0},
             "Agent3": {"running": True, "last_update": None, "message_count": 0},
-            "Agent4": {"running": True, "last_update": None, "message_count": 0}
+            "Agent4": {"running": True, "last_update": None, "message_count": 0},
+            "WarMonitorAgent": {"running": True, "last_update": None, "message_count": 0},
         }
+        self.war_metrics = {}
         
         # Set up routes
         self.setup_routes()
@@ -56,6 +58,10 @@ class WebDashboard:
                 return jsonify({"success": True, "agent": agent_name, "status": status})
             return jsonify({"success": False, "error": "Agent not found"}), 404
         
+        @self.app.route('/api/war-metrics')
+        def get_war_metrics():
+            return jsonify(self.war_metrics)
+
         @self.app.route('/api/clear-history', methods=['POST'])
         def clear_history():
             """Clear message history"""
@@ -81,6 +87,8 @@ class WebDashboard:
                 if agent_name in self.agent_status:
                     self.agent_status[agent_name]["last_update"] = datetime.now().isoformat()
                     self.agent_status[agent_name]["message_count"] += 1
+                if agent_name == "WarMonitorAgent" and "metrics" in message:
+                    self.war_metrics = message["metrics"]
                     
             except:
                 pass
@@ -373,8 +381,45 @@ class WebDashboard:
                     </div>
                 </header>
                 
+                <div id="war-panel" style="background:rgba(20,10,10,0.92);border:1px solid #f85149;border-radius:12px;padding:20px;margin-bottom:20px;display:none">
+                  <h2 style="color:#f85149;font-size:16px;letter-spacing:3px;margin-bottom:14px">⚔️ WAR MONITOR — 2026 IRAN WAR</h2>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+                    <div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:8px;padding:12px;text-align:center">
+                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">WAR DAY</div>
+                      <div style="font-size:28px;font-weight:700;color:#f85149" id="w-day">—</div>
+                    </div>
+                    <div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:8px;padding:12px;text-align:center">
+                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">BITCOIN</div>
+                      <div style="font-size:18px;font-weight:700;color:#3fb950" id="w-btc">—</div>
+                      <div style="font-size:11px;color:#8b949e" id="w-btc-c">—</div>
+                    </div>
+                    <div style="background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.3);border-radius:8px;padding:12px;text-align:center">
+                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">S&amp;P 500</div>
+                      <div style="font-size:18px;font-weight:700;color:#58a6ff" id="w-sp">—</div>
+                      <div style="font-size:11px;color:#8b949e" id="w-sp-c">—</div>
+                    </div>
+                    <div style="background:rgba(227,105,58,0.1);border:1px solid rgba(227,105,58,0.3);border-radius:8px;padding:12px;text-align:center">
+                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">WTI OIL</div>
+                      <div style="font-size:18px;font-weight:700;color:#e3693a" id="w-oil">—</div>
+                      <div style="font-size:11px;color:#8b949e" id="w-oil-c">—</div>
+                    </div>
+                    <div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:8px;padding:12px;text-align:center">
+                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">HORMUZ</div>
+                      <div style="font-size:14px;font-weight:700;color:#f85149">CLOSED</div>
+                    </div>
+                    <div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:8px;padding:12px;text-align:center">
+                      <div style="font-size:10px;color:#8b949e;letter-spacing:1px">CEASEFIRE</div>
+                      <div style="font-size:14px;font-weight:700;color:#f85149">NONE</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:10px;text-align:right">
+                    <a href="https://vigilant-forgiveness-production-6c0f.up.railway.app" target="_blank"
+                       style="color:#58a6ff;font-size:11px;text-decoration:none">🌐 Open Live Dashboard →</a>
+                  </div>
+                </div>
+
                 <div class="agents-section" id="agents-container"></div>
-                
+
                 <div class="messages-section">
                     <div class="messages-header">
                         <h2>📋 Message Log</h2>
@@ -387,7 +432,7 @@ class WebDashboard:
             </div>
             
             <script>
-                const AGENTS = ["Agent1", "Agent2", "Agent3", "Agent4"];
+                const AGENTS = ["Agent1", "Agent2", "Agent3", "Agent4", "WarMonitorAgent"];
                 let messageCount = 0;
                 
                 function formatTime(timestamp) {
@@ -503,13 +548,33 @@ class WebDashboard:
                     }
                 }
                 
+                function updateWarPanel() {
+                    fetch('/api/war-metrics')
+                        .then(r => r.json())
+                        .then(m => {
+                            if (!m.war_day) return;
+                            document.getElementById('war-panel').style.display = 'block';
+                            document.getElementById('w-day').textContent = m.war_day;
+                            const fmt = (n) => n ? '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+                            const chg = (n) => n ? (n >= 0 ? '▲ ' : '▼ ') + Math.abs(n).toFixed(2) + '%' : '—';
+                            document.getElementById('w-btc').textContent  = fmt(m.btc);
+                            document.getElementById('w-btc-c').textContent = chg(m.btc_change);
+                            document.getElementById('w-sp').textContent   = fmt(m.sp500);
+                            document.getElementById('w-sp-c').textContent  = chg(m.sp500_change);
+                            document.getElementById('w-oil').textContent  = fmt(m.oil);
+                            document.getElementById('w-oil-c').textContent = chg(m.oil_change);
+                        }).catch(() => {});
+                }
+
                 // Initial load
                 updateAgentStatus();
                 updateMessageLog();
-                
+                updateWarPanel();
+
                 // Auto-refresh every 2 seconds
                 setInterval(updateAgentStatus, 2000);
                 setInterval(updateMessageLog, 2000);
+                setInterval(updateWarPanel, 60000);
             </script>
         </body>
         </html>
