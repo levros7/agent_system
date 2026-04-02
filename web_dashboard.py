@@ -21,15 +21,15 @@ class WebDashboard:
         
         # Agent status tracking
         self.agent_status = {
-            "Agent1":           {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
-            "Agent2":           {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
-            "Agent3":           {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
-            "Agent4":           {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
-            "WarBTCAgent":      {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
-            "WarSP500Agent":    {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
-            "WarOilAgent":      {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
-            "WarNewsAgent":     {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
-            "WarTelegramAgent": {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarGoldAgent":      {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarGasAgent":       {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarDashboardAgent": {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarIntelAgent":     {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarBTCAgent":       {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarSP500Agent":     {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarOilAgent":       {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarNewsAgent":      {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
+            "WarTelegramAgent":  {"running": True, "last_update": None, "message_count": 0, "last_data": "", "last_type": ""},
         }
         self.war_metrics = {}
         self.agent_logs = {name: deque(maxlen=10) for name in self.agent_status}
@@ -411,8 +411,8 @@ class WebDashboard:
                 <div class="section-label">⚔️ WAR MONITOR TEAM</div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:20px" id="war-agents"></div>
 
-                <!-- System Agents -->
-                <div class="section-label">🤖 SYSTEM AGENTS</div>
+                <!-- Extended War Agents -->
+                <div class="section-label">🛰️ EXTENDED INTEL AGENTS</div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:20px" id="sys-agents"></div>
 
                 <!-- Live Activity Feed -->
@@ -426,16 +426,16 @@ class WebDashboard:
             </div>
             
             <script>
-                const ALL_AGENTS   = ["Agent1","Agent2","Agent3","Agent4"];
+                const ALL_AGENTS   = ["WarGoldAgent","WarGasAgent","WarDashboardAgent","WarIntelAgent"];
                 const WAR_AGENTS   = ["WarBTCAgent","WarSP500Agent","WarOilAgent","WarNewsAgent","WarTelegramAgent"];
                 const AGENT_ICONS  = {
-                    Agent1:"🔧", Agent2:"📊", Agent3:"🔍", Agent4:"📋",
+                    WarGoldAgent:"🥇", WarGasAgent:"🔥", WarDashboardAgent:"🌐", WarIntelAgent:"📋",
                     WarBTCAgent:"₿", WarSP500Agent:"📈", WarOilAgent:"🛢",
                     WarNewsAgent:"📰", WarTelegramAgent:"📡"
                 };
                 const AGENT_DESC = {
-                    Agent1:"Task Processing", Agent2:"Data Collection",
-                    Agent3:"Analysis", Agent4:"Reporting",
+                    WarGoldAgent:"Gold Futures · Yahoo Finance", WarGasAgent:"Natural Gas · Yahoo Finance",
+                    WarDashboardAgent:"Dashboard Uptime Monitor", WarIntelAgent:"30min Intel Summary · Telegram",
                     WarBTCAgent:"Bitcoin · Binance API", WarSP500Agent:"S&P 500 · Yahoo Finance",
                     WarOilAgent:"WTI Oil · Yahoo Finance", WarNewsAgent:"War Headlines · GNews",
                     WarTelegramAgent:"Alerts & Briefings · Telegram"

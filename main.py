@@ -43,14 +43,15 @@ def main():
     # Create manager
     manager = ManagerAgent(message_queue, dashboard_queue)
     
-    # Register agents
-    manager.register_agent("Agent1", Agent1())
-    manager.register_agent("Agent2", Agent2())
-    manager.register_agent("Agent3", Agent3())
-    manager.register_agent("Agent4", Agent4())
-
-    # War Monitor team — shared state connects all 5 agents
+    # War Monitor team — shared state connects all agents
     war_state = WarSharedState()
+
+    # Extended market + ops agents (also use war_state)
+    manager.register_agent("WarGoldAgent",      Agent1(war_state))
+    manager.register_agent("WarGasAgent",       Agent2(war_state))
+    manager.register_agent("WarDashboardAgent", Agent3(war_state))
+    manager.register_agent("WarIntelAgent",     Agent4(war_state))
+
     manager.register_agent("WarBTCAgent",      WarBTCAgent(war_state))
     manager.register_agent("WarSP500Agent",    WarSP500Agent(war_state))
     manager.register_agent("WarOilAgent",      WarOilAgent(war_state))

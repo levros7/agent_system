@@ -16,6 +16,10 @@ class WarSharedState:
         self.sp500_change = None
         self.oil          = None
         self.oil_change   = None
+        self.gold         = None
+        self.gold_change  = None
+        self.gas          = None
+        self.gas_change   = None
         self.latest_news        = []
         self.last_briefing_day  = None
         self.alerts_sent        = {}     # ticker -> last alerted price
@@ -35,6 +39,8 @@ class WarSharedState:
                 'btc': self.btc, 'btc_change': self.btc_change,
                 'sp500': self.sp500, 'sp500_change': self.sp500_change,
                 'oil': self.oil, 'oil_change': self.oil_change,
+                'gold': self.gold, 'gold_change': self.gold_change,
+                'gas': self.gas, 'gas_change': self.gas_change,
                 'war_day': (datetime.now(timezone.utc) - WAR_START).days + 1,
                 'ceasefire': self.ceasefire,
                 'ceasefire_headline': self.ceasefire_headline,
