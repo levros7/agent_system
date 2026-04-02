@@ -50,7 +50,7 @@ def main():
     manager.register_agent("WarGoldAgent",      Agent1(war_state))
     manager.register_agent("WarGasAgent",       Agent2(war_state))
     manager.register_agent("WarDashboardAgent", Agent3(war_state))
-    manager.register_agent("WarIntelAgent",     Agent4(war_state))
+    manager.register_agent("WarWorkflowManager", Agent4(war_state))
 
     manager.register_agent("WarBTCAgent",      WarBTCAgent(war_state))
     manager.register_agent("WarSP500Agent",    WarSP500Agent(war_state))
