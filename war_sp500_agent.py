@@ -32,6 +32,7 @@ class WarSP500Agent:
             try:
                 price, change = _fetch_yahoo('^GSPC')
                 self.state.set_market('sp500', price, change)
+                self.state.ping_agent(self.name)
 
                 message_queue.put({
                     'agent': self.name,

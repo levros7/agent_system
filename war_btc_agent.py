@@ -27,6 +27,7 @@ class WarBTCAgent:
                 price  = float(data['lastPrice'])
                 change = float(data['priceChangePercent'])
                 self.state.set_market('btc', price, change)
+                self.state.ping_agent(self.name)
 
                 message_queue.put({
                     'agent': self.name,

@@ -32,6 +32,7 @@ class WarOilAgent:
             try:
                 price, change = _fetch_yahoo('CL=F')
                 self.state.set_market('oil', price, change)
+                self.state.ping_agent(self.name)
 
                 message_queue.put({
                     'agent': self.name,

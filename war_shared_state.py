@@ -10,15 +10,19 @@ WAR_START = datetime(2026, 2, 28, tzinfo=timezone.utc)
 class WarSharedState:
     def __init__(self):
         self._lock = threading.Lock()
-        self.btc        = None
-        self.btc_change = None
+        self.btc          = None
+        self.btc_change   = None
         self.sp500        = None
         self.sp500_change = None
-        self.oil        = None
-        self.oil_change = None
-        self.latest_news     = []   # list of {title, source, url, date}
-        self.last_briefing_day = None
-        self.alerts_sent = {}       # ticker -> last alerted price
+        self.oil          = None
+        self.oil_change   = None
+        self.latest_news        = []
+        self.last_briefing_day  = None
+        self.alerts_sent        = {}     # ticker -> last alerted price
+        self.agent_last_seen    = {}     # agent_name -> timestamp
+        self.ceasefire          = False
+        self.ceasefire_headline = ''
+        self.news_strike_mentions = 0   # missile headlines detected
 
     def set_market(self, ticker, price, change):
         with self._lock:
@@ -32,6 +36,9 @@ class WarSharedState:
                 'sp500': self.sp500, 'sp500_change': self.sp500_change,
                 'oil': self.oil, 'oil_change': self.oil_change,
                 'war_day': (datetime.now(timezone.utc) - WAR_START).days + 1,
+                'ceasefire': self.ceasefire,
+                'ceasefire_headline': self.ceasefire_headline,
+                'news_strike_mentions': self.news_strike_mentions,
             }
 
     def set_news(self, articles):
@@ -42,8 +49,29 @@ class WarSharedState:
         with self._lock:
             return list(self.latest_news)
 
+    def set_ceasefire(self, flag, headline=''):
+        with self._lock:
+            self.ceasefire = flag
+            self.ceasefire_headline = headline
+
+    def increment_news_strikes(self, count=1):
+        with self._lock:
+            self.news_strike_mentions += count
+
+    def ping_agent(self, agent_name):
+        with self._lock:
+            self.agent_last_seen[agent_name] = datetime.now(timezone.utc).timestamp()
+
+    def get_silent_agents(self, threshold_seconds=300):
+        """Return list of agents silent for longer than threshold."""
+        with self._lock:
+            now = datetime.now(timezone.utc).timestamp()
+            return [
+                name for name, ts in self.agent_last_seen.items()
+                if (now - ts) > threshold_seconds
+            ]
+
     def should_alert(self, ticker, price, threshold=2.0):
-        """Returns (should_alert, move_pct). True if price moved > threshold since last alert."""
         with self._lock:
             last = self.alerts_sent.get(ticker)
             if last is None:
