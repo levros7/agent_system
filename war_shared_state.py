@@ -22,6 +22,7 @@ class WarSharedState:
         self.gas_change   = None
         self.fear_greed_value          = None
         self.fear_greed_classification = ''
+        self.missile_events     = []   # last 20 detected launches
         self.latest_news        = []
         self.last_briefing_day  = None
         self.alerts_sent        = {}     # ticker -> last alerted price
@@ -58,6 +59,16 @@ class WarSharedState:
     def get_news(self):
         with self._lock:
             return list(self.latest_news)
+
+    def add_missile_event(self, event):
+        with self._lock:
+            self.missile_events.insert(0, event)
+            if len(self.missile_events) > 20:
+                self.missile_events.pop()
+
+    def get_missile_events(self):
+        with self._lock:
+            return list(self.missile_events)
 
     def set_fear_greed(self, value, classification):
         with self._lock:

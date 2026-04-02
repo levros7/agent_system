@@ -19,6 +19,7 @@ from war_oil_agent import WarOilAgent
 from war_news_agent import WarNewsAgent
 from war_telegram_agent import WarTelegramAgent
 from war_fear_greed_agent import WarFearGreedAgent
+from war_missile_tracker_agent import WarMissileTrackerAgent
 
 
 def main():
@@ -53,7 +54,8 @@ def main():
     manager.register_agent("WarDashboardAgent", Agent3(war_state))
     manager.register_agent("WarWorkflowManager", Agent4(war_state))
 
-    manager.register_agent("WarFearGreedAgent", WarFearGreedAgent(war_state))
+    manager.register_agent("WarFearGreedAgent",      WarFearGreedAgent(war_state))
+    manager.register_agent("WarMissileTrackerAgent", WarMissileTrackerAgent(war_state))
     manager.register_agent("WarBTCAgent",      WarBTCAgent(war_state))
     manager.register_agent("WarSP500Agent",    WarSP500Agent(war_state))
     manager.register_agent("WarOilAgent",      WarOilAgent(war_state))
