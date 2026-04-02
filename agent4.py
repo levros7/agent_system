@@ -23,7 +23,7 @@ HEALTH_THRESHOLD   = 180   # agent silent >3min = issue
 
 ALL_AGENTS = [
     'WarBTCAgent', 'WarSP500Agent', 'WarOilAgent',
-    'WarNewsAgent', 'WarTelegramAgent',
+    'WarNewsAgent', 'WarTelegramAgent', 'WarFearGreedAgent',
     'WarGoldAgent', 'WarGasAgent', 'WarDashboardAgent',
 ]
 

@@ -20,6 +20,8 @@ class WarSharedState:
         self.gold_change  = None
         self.gas          = None
         self.gas_change   = None
+        self.fear_greed_value          = None
+        self.fear_greed_classification = ''
         self.latest_news        = []
         self.last_briefing_day  = None
         self.alerts_sent        = {}     # ticker -> last alerted price
@@ -41,6 +43,8 @@ class WarSharedState:
                 'oil': self.oil, 'oil_change': self.oil_change,
                 'gold': self.gold, 'gold_change': self.gold_change,
                 'gas': self.gas, 'gas_change': self.gas_change,
+                'fear_greed': self.fear_greed_value,
+                'fear_greed_class': self.fear_greed_classification,
                 'war_day': (datetime.now(timezone.utc) - WAR_START).days + 1,
                 'ceasefire': self.ceasefire,
                 'ceasefire_headline': self.ceasefire_headline,
@@ -54,6 +58,11 @@ class WarSharedState:
     def get_news(self):
         with self._lock:
             return list(self.latest_news)
+
+    def set_fear_greed(self, value, classification):
+        with self._lock:
+            self.fear_greed_value = value
+            self.fear_greed_classification = classification
 
     def set_ceasefire(self, flag, headline=''):
         with self._lock:
