@@ -16,10 +16,9 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '8619883125:AAFUcPGAecAqFVm
 TELEGRAM_CHAT_ID   = os.getenv('TELEGRAM_CHAT_ID', '603046431')
 
 RSS_FEEDS = [
-    ('Reuters',          'https://feeds.reuters.com/reuters/topNews'),
-    ('Times of Israel',  'https://www.timesofisrael.com/feed/'),
-    ('CNN World',        'https://rss.cnn.com/rss/edition_world.rss'),
-    ('Al Jazeera',       'https://www.aljazeera.com/xml/rss/all.xml'),
+    ('Times of Israel', 'https://www.timesofisrael.com/feed/'),
+    ('BBC World',       'https://feeds.bbci.co.uk/news/world/rss.xml'),
+    ('Jerusalem Post',  'https://www.jpost.com/rss/rssfeedsheadlines.aspx'),
 ]
 
 MISSILE_KEYWORDS = [
@@ -58,25 +57,23 @@ def _fetch_rss(url):
 
 
 def _parse_rss(xml_text):
-    """Return list of {title, link} from RSS."""
+    """Return list of {title, link} from RSS using regex (handles CDATA)."""
     items = []
-    # Strip namespaces for easier parsing
-    xml_text = re.sub(r' xmlns[^"]*"[^"]*"', '', xml_text)
-    try:
-        root = ET.fromstring(xml_text)
-        for item in root.iter('item'):
-            title_el = item.find('title')
-            link_el  = item.find('link') or item.find('guid')
-            title = (title_el.text or '').strip() if title_el is not None else ''
-            link  = (link_el.text or '').strip() if link_el is not None else ''
-            if title:
-                items.append({'title': title, 'link': link})
-    except ET.ParseError:
-        # Fallback: regex
-        for m in re.finditer(r'<title[^>]*><!\[CDATA\[(.*?)\]\]></title>|<title[^>]*>(.*?)</title>', xml_text, re.S):
-            title = (m.group(1) or m.group(2) or '').strip()
-            if title and title not in ('', 'RSS', 'Feed'):
-                items.append({'title': title, 'link': ''})
+    # Find all <item>...</item> blocks
+    for block in re.findall(r'<item[^>]*>([\s\S]*?)</item>', xml_text, re.IGNORECASE):
+        def get_tag(tag):
+            # Matches both CDATA and plain text content
+            m = re.search(
+                r'<' + tag + r'[^>]*>\s*(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?\s*</' + tag + r'>',
+                block, re.IGNORECASE)
+            if not m:
+                return ''
+            return re.sub(r'<!\[CDATA\[|\]\]>', '', m.group(1)).strip()
+
+        title = get_tag('title')
+        link  = get_tag('link') or get_tag('guid')
+        if title:
+            items.append({'title': title, 'link': link})
     return items
 
 
