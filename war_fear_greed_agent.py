@@ -57,4 +57,7 @@ class WarFearGreedAgent:
                 print(f'[{self.name}] Error: {e}')
                 message_queue.put({'agent': self.name, 'type': 'error', 'data': str(e), 'timestamp': time.time()})
 
-            time.sleep(self.interval)
+            # Sleep in 60s chunks — ping each time so health monitor doesn't flag as down
+            for _ in range(self.interval // 60):
+                time.sleep(60)
+                self.state.ping_agent(self.name)

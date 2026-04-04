@@ -37,7 +37,9 @@ class WarNewsAgent:
                 if not GNEWS_KEY:
                     message_queue.put({'agent': self.name, 'type': 'warning',
                                        'data': 'GNEWS_API_KEY not set', 'timestamp': time.time()})
-                    time.sleep(self.interval)
+                    for _ in range(self.interval // 60):
+                        time.sleep(60)
+                        self.state.ping_agent(self.name)
                     continue
 
                 q   = urllib.parse.quote('Iran Israel war 2026')
@@ -89,4 +91,7 @@ class WarNewsAgent:
                 message_queue.put({'agent': self.name, 'type': 'warning',
                                    'data': f'GNews: {status}', 'timestamp': time.time()})
 
-            time.sleep(self.interval)
+            # Sleep in 60s chunks — ping so health monitor doesn't flag as down
+            for _ in range(self.interval // 60):
+                time.sleep(60)
+                self.state.ping_agent(self.name)
