@@ -103,20 +103,26 @@ class WarTelegramAgent:
                     self._ceasefire_alerted = False
 
                 # ── Breaking news alert ────────────────────────────────
+                # Skip missile/strike headlines — WarMissileTrackerAgent already sends those
+                MISSILE_SKIP = ['missile','ballistic','rocket','drone','airstrike',
+                                'air strike','struck','fired','launched','attack','barrage','iaf hits']
                 news = self.state.get_news()
                 if news:
                     top = news[0]
                     if top['title'] != self._last_headline:
                         self._last_headline = top['title']
-                        send_telegram(
-                            f'📰 <b>BREAKING — WAR UPDATE</b>\n\n'
-                            f'{top["title"]}\n\n'
-                            f'<i>{top["source"]} · {top["date"]}</i>\n'
-                            f'<a href="{top["url"]}">Read more</a>'
-                        )
-                        message_queue.put({'agent': self.name, 'type': 'news_alert',
-                                           'data': f'Sent: {top["title"][:80]}',
-                                           'timestamp': time.time()})
+                        t = top['title'].lower()
+                        is_missile_news = any(k in t for k in MISSILE_SKIP)
+                        if not is_missile_news:
+                            send_telegram(
+                                f'📰 <b>BREAKING — WAR UPDATE</b>\n\n'
+                                f'{top["title"]}\n\n'
+                                f'<i>{top["source"]} · {top["date"]}</i>\n'
+                                f'<a href="{top["url"]}">Read more</a>'
+                            )
+                            message_queue.put({'agent': self.name, 'type': 'news_alert',
+                                               'data': f'Sent: {top["title"][:80]}',
+                                               'timestamp': time.time()})
 
                 # ── Agent health monitoring ────────────────────────────
                 silent = self.state.get_silent_agents(HEALTH_THRESHOLD)
