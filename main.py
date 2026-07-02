@@ -15,6 +15,7 @@ from agent4 import Agent4
 from war_shared_state import WarSharedState
 from war_btc_agent import WarBTCAgent
 from war_sp500_agent import WarSP500Agent
+from war_lmt_agent import WarLMTAgent
 from war_oil_agent import WarOilAgent
 from war_news_agent import WarNewsAgent
 from war_telegram_agent import WarTelegramAgent
@@ -58,6 +59,7 @@ def main():
     manager.register_agent("WarMissileTrackerAgent", WarMissileTrackerAgent(war_state))
     manager.register_agent("WarBTCAgent",      WarBTCAgent(war_state))
     manager.register_agent("WarSP500Agent",    WarSP500Agent(war_state))
+    manager.register_agent("WarLMTAgent",      WarLMTAgent(war_state))
     manager.register_agent("WarOilAgent",      WarOilAgent(war_state))
     manager.register_agent("WarNewsAgent",     WarNewsAgent(war_state))
     manager.register_agent("WarTelegramAgent", WarTelegramAgent(war_state))

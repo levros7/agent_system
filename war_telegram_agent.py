@@ -15,7 +15,7 @@ TELEGRAM_CHANNEL_ID = os.getenv('TELEGRAM_CHANNEL_ID', '')  # e.g. @WarMonitorCh
 ALERT_THRESHOLD     = 2.0
 CHECK_INTERVAL      = 30
 HEALTH_THRESHOLD    = 300   # 5 minutes silence = unhealthy
-WAR_AGENTS          = ['WarBTCAgent', 'WarSP500Agent', 'WarOilAgent', 'WarNewsAgent']
+WAR_AGENTS          = ['WarBTCAgent', 'WarSP500Agent', 'WarOilAgent', 'WarNewsAgent', 'WarLMTAgent']
 
 WAR_START = datetime(2026, 2, 28, tzinfo=timezone.utc)
 
@@ -54,7 +54,8 @@ class WarTelegramAgent:
             f'📈 <b>MARKETS</b>\n'
             f'₿ Bitcoin:  {fmt(snap["btc"])}  {chg(snap["btc_change"])}\n'
             f'📊 S&P 500: {fmt(snap["sp500"])}  {chg(snap["sp500_change"])}\n'
-            f'🛢 WTI Oil: {fmt(snap["oil"])}  {chg(snap["oil_change"])}\n\n'
+            f'🛢 WTI Oil: {fmt(snap["oil"])}  {chg(snap["oil_change"])}\n'
+            f'🛡 Lockheed Martin: {fmt(snap.get("lmt"))}  {chg(snap.get("lmt_change"))}\n\n'
             f'🎯 Missiles (2026): ~500+  |  Intercepted: ~90%\n\n'
             f'🌐 <a href="https://vigilant-forgiveness-production-6c0f.up.railway.app">Live Dashboard</a>'
         )
@@ -72,6 +73,7 @@ class WarTelegramAgent:
                     ('btc',   snap['btc'],   snap['btc_change'],   'Bitcoin'),
                     ('sp500', snap['sp500'], snap['sp500_change'], 'S&P 500'),
                     ('oil',   snap['oil'],   snap['oil_change'],   'WTI Crude Oil'),
+                    ('lmt',   snap.get('lmt'), snap.get('lmt_change'), 'Lockheed Martin'),
                 ]:
                     if price is None:
                         continue

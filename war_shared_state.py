@@ -20,6 +20,8 @@ class WarSharedState:
         self.gold_change  = None
         self.gas          = None
         self.gas_change   = None
+        self.lmt          = None   # Lockheed Martin — defense sector indicator
+        self.lmt_change   = None
         self.fear_greed_value          = None
         self.fear_greed_classification = ''
         self.missile_events     = []   # last 20 detected launches
@@ -44,6 +46,7 @@ class WarSharedState:
                 'oil': self.oil, 'oil_change': self.oil_change,
                 'gold': self.gold, 'gold_change': self.gold_change,
                 'gas': self.gas, 'gas_change': self.gas_change,
+                'lmt': self.lmt, 'lmt_change': self.lmt_change,
                 'fear_greed': self.fear_greed_value,
                 'fear_greed_class': self.fear_greed_classification,
                 'war_day': (datetime.now(timezone.utc) - WAR_START).days + 1,
