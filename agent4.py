@@ -15,8 +15,8 @@ import json
 import os
 from datetime import datetime, timezone
 
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '8619883125:AAFUcPGAecAqFVmRz3c7vr5uO5YY5qx9m2s')
-TELEGRAM_CHAT_ID   = os.getenv('TELEGRAM_CHAT_ID', '603046431')
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID   = os.getenv('TELEGRAM_CHAT_ID', '')
 CHECK_INTERVAL     = 30    # health check every 30s
 REPORT_INTERVAL    = 1800  # full status report every 30min
 HEALTH_THRESHOLD   = 180   # agent silent >3min = issue
@@ -29,6 +29,8 @@ ALL_AGENTS = [
 
 
 def _send_telegram(text):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
     try:
         body = json.dumps({'chat_id': TELEGRAM_CHAT_ID, 'text': text, 'parse_mode': 'HTML'}).encode()
         req = urllib.request.Request(

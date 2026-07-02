@@ -12,6 +12,8 @@ import os
 GNEWS_KEY = os.getenv('GNEWS_API_KEY', '')
 
 CEASEFIRE_KEYWORDS = ['ceasefire', 'cease fire', 'peace deal', 'truce', 'armistice', 'agreement reached', 'halt fighting']
+# Headlines like "ceasefire talks collapse" must NOT flip status to ceasefire
+CEASEFIRE_REJECT   = ['no ceasefire', 'reject', 'collaps', 'fail', 'deni', 'rule out', 'refus', 'stall', 'break down', 'breaks down']
 MISSILE_KEYWORDS   = ['missile', 'ballistic', 'rocket', 'drone', 'barrage', 'salvo', 'strike', 'attack']
 
 
@@ -20,10 +22,12 @@ class WarNewsAgent:
         self.name     = 'WarNewsAgent'
         self.interval = 7200   # 2 hours — 12 req/day
         self.state    = shared_state
-        self._seen    = set()  # deduplication: seen headline titles
+        self._seen    = {}  # dict as ordered set — dedupe, evict oldest first
 
     def _is_ceasefire(self, title):
         t = title.lower()
+        if any(k in t for k in CEASEFIRE_REJECT):
+            return False
         return any(k in t for k in CEASEFIRE_KEYWORDS)
 
     def _has_missile(self, title):
@@ -57,10 +61,11 @@ class WarNewsAgent:
                 # ── Deduplication ──────────────────────────────────────
                 new_articles = [a for a in articles if a['title'] not in self._seen]
                 for a in new_articles:
-                    self._seen.add(a['title'])
-                # Keep seen set bounded
+                    self._seen[a['title']] = True
+                # Keep seen set bounded — evict oldest (insertion order)
                 if len(self._seen) > 500:
-                    self._seen = set(list(self._seen)[-200:])
+                    for k in list(self._seen)[:300]:
+                        del self._seen[k]
 
                 self.state.set_news(articles)
 

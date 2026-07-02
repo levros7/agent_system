@@ -6,10 +6,11 @@ import time
 import urllib.request
 import json
 import os
+import html
 from datetime import datetime, timezone
 
-TELEGRAM_BOT_TOKEN  = os.getenv('TELEGRAM_BOT_TOKEN', '8619883125:AAFUcPGAecAqFVmRz3c7vr5uO5YY5qx9m2s')
-TELEGRAM_CHAT_ID    = os.getenv('TELEGRAM_CHAT_ID',    '603046431')
+TELEGRAM_BOT_TOKEN  = os.getenv('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID    = os.getenv('TELEGRAM_CHAT_ID',    '')
 TELEGRAM_CHANNEL_ID = os.getenv('TELEGRAM_CHANNEL_ID', '')  # e.g. @WarMonitorChannel
 ALERT_THRESHOLD     = 2.0
 CHECK_INTERVAL      = 30
@@ -36,7 +37,7 @@ class WarTelegramAgent:
     def __init__(self, shared_state):
         self.name  = 'WarTelegramAgent'
         self.state = shared_state
-        self._last_headline       = None
+        self._sent_headlines      = {}   # dict as ordered set — evict oldest first
         self._ceasefire_alerted   = False
         self._alerted_down        = set()   # agents already alerted as down
 
@@ -92,7 +93,7 @@ class WarTelegramAgent:
                     self._ceasefire_alerted = True
                     send_telegram(
                         f'🕊️ <b>CEASEFIRE SIGNAL DETECTED</b>\n\n'
-                        f'{snap.get("ceasefire_headline", "")}\n\n'
+                        f'{html.escape(snap.get("ceasefire_headline", ""))}\n\n'
                         f'War Day {snap["war_day"]} — monitoring for confirmation.\n'
                         f'🌐 <a href="https://vigilant-forgiveness-production-6c0f.up.railway.app">Dashboard</a>'
                     )
@@ -109,16 +110,20 @@ class WarTelegramAgent:
                 news = self.state.get_news()
                 if news:
                     top = news[0]
-                    if top['title'] != self._last_headline:
-                        self._last_headline = top['title']
+                    if top['title'] not in self._sent_headlines:
+                        self._sent_headlines[top['title']] = True
+                        if len(self._sent_headlines) > 500:
+                            for k in list(self._sent_headlines)[:300]:
+                                del self._sent_headlines[k]
                         t = top['title'].lower()
                         is_missile_news = any(k in t for k in MISSILE_SKIP)
                         if not is_missile_news:
+                            # Escape title — a raw < or & makes Telegram reject the HTML message
                             send_telegram(
                                 f'📰 <b>BREAKING — WAR UPDATE</b>\n\n'
-                                f'{top["title"]}\n\n'
-                                f'<i>{top["source"]} · {top["date"]}</i>\n'
-                                f'<a href="{top["url"]}">Read more</a>'
+                                f'{html.escape(top["title"])}\n\n'
+                                f'<i>{html.escape(top["source"])} · {html.escape(top["date"])}</i>\n'
+                                f'<a href="{html.escape(top["url"], quote=True)}">Read more</a>'
                             )
                             message_queue.put({'agent': self.name, 'type': 'news_alert',
                                                'data': f'Sent: {top["title"][:80]}',

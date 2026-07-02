@@ -2,18 +2,19 @@
 WarMissileTrackerAgent — monitors RSS news feeds every 2 minutes for missile/launch events.
 When a launch is detected: immediate Telegram alert + posts to activity feed.
 
-Sources: Reuters, Times of Israel, CNN, Al Jazeera (free RSS, no API key)
+Sources: Times of Israel, BBC World, Jerusalem Post (free RSS, no API key)
 """
 import time
 import urllib.request
 import json
 import os
 import re
+import html
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '8619883125:AAFUcPGAecAqFVmRz3c7vr5uO5YY5qx9m2s')
-TELEGRAM_CHAT_ID   = os.getenv('TELEGRAM_CHAT_ID', '603046431')
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID   = os.getenv('TELEGRAM_CHAT_ID', '')
 
 RSS_FEEDS = [
     ('Times of Israel', 'https://www.timesofisrael.com/feed/'),
@@ -96,6 +97,8 @@ def _missile_type(title):
 
 
 def _send_telegram(text):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
     try:
         body = json.dumps({'chat_id': TELEGRAM_CHAT_ID, 'text': text, 'parse_mode': 'HTML'}).encode()
         req  = urllib.request.Request(
@@ -111,7 +114,7 @@ class WarMissileTrackerAgent:
         self.name     = 'WarMissileTrackerAgent'
         self.interval = 120   # scan every 2 minutes
         self.state    = shared_state
-        self._seen    = set()
+        self._seen    = {}   # dict as ordered set — evict oldest first
         self._count   = 0
 
     def run(self, message_queue):
@@ -131,22 +134,30 @@ class WarMissileTrackerAgent:
                         if not any(kw in t for kw in MISSILE_KEYWORDS):
                             continue
 
-                        self._seen.add(title)
+                        self._seen[title] = True
                         if len(self._seen) > 500:  # prevent unbounded growth
-                            self._seen = set(list(self._seen)[-200:])
+                            for k in list(self._seen)[:300]:
+                                del self._seen[k]
+
+                        origin  = _detect_location(title, ORIGIN_MAP)
+                        target  = _detect_location(title, TARGET_MAP)
+
+                        # Skip events with no tie to the monitored theater —
+                        # otherwise Russia-Ukraine headlines flood the alerts
+                        if not origin and not target:
+                            continue
 
                         self._count += 1
                         detected += 1
 
-                        origin  = _detect_location(title, ORIGIN_MAP)
-                        target  = _detect_location(title, TARGET_MAP)
                         m_type  = _missile_type(title)
                         icon    = '🛸' if m_type == 'drone' else '✈️' if m_type == 'airstrike' else '🚀'
 
-                        # Immediate Telegram alert
+                        # Immediate Telegram alert (title escaped — a raw < or &
+                        # makes Telegram reject the whole HTML message)
                         tg = (
                             f'{icon} <b>MISSILE TRACKER ALERT #{self._count}</b>\n\n'
-                            f'{title}\n\n'
+                            f'{html.escape(title)}\n\n'
                             f'{"📍 Origin: " + origin + chr(10) if origin else ""}'
                             f'{"🎯 Target: " + target + chr(10) if target else ""}'
                             f'⚔️ Type: {m_type.upper()}\n'
