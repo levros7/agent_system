@@ -16,10 +16,6 @@ class WarSharedState:
         self.sp500_change = None
         self.oil          = None
         self.oil_change   = None
-        self.gold         = None
-        self.gold_change  = None
-        self.gas          = None
-        self.gas_change   = None
         self.lmt          = None   # Lockheed Martin — defense sector indicator
         self.lmt_change   = None
         self.fear_greed_value          = None
@@ -44,8 +40,6 @@ class WarSharedState:
                 'btc': self.btc, 'btc_change': self.btc_change,
                 'sp500': self.sp500, 'sp500_change': self.sp500_change,
                 'oil': self.oil, 'oil_change': self.oil_change,
-                'gold': self.gold, 'gold_change': self.gold_change,
-                'gas': self.gas, 'gas_change': self.gas_change,
                 'lmt': self.lmt, 'lmt_change': self.lmt_change,
                 'fear_greed': self.fear_greed_value,
                 'fear_greed_class': self.fear_greed_classification,

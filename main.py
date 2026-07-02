@@ -8,8 +8,6 @@ import os
 from queue import Queue
 from manager_agent import ManagerAgent
 from web_dashboard import WebDashboard
-from agent1 import Agent1
-from agent2 import Agent2
 from agent3 import Agent3
 from agent4 import Agent4
 from war_shared_state import WarSharedState
@@ -49,9 +47,7 @@ def main():
     # War Monitor team — shared state connects all agents
     war_state = WarSharedState()
 
-    # Extended market + ops agents (also use war_state)
-    manager.register_agent("WarGoldAgent",      Agent1(war_state))
-    manager.register_agent("WarGasAgent",       Agent2(war_state))
+    # Extended ops agents (also use war_state)
     manager.register_agent("WarDashboardAgent", Agent3(war_state))
     manager.register_agent("WarWorkflowManager", Agent4(war_state))
 

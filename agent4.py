@@ -5,7 +5,7 @@ Manages and coordinates all other agents in the war monitor system.
 Responsibilities:
 - Monitors health of all 8 agents every 30s
 - Detects and reports agent failures to Telegram
-- Watches for correlated market anomalies (e.g. Oil + Gas both spiking = Hormuz alert)
+- Watches for market anomalies (Oil spiking hard = Hormuz alert)
 - Sends a full system status report to Telegram every 30 minutes
 - Logs all workflow decisions to the dashboard activity feed
 """
@@ -24,7 +24,7 @@ HEALTH_THRESHOLD   = 180   # agent silent >3min = issue
 ALL_AGENTS = [
     'WarBTCAgent', 'WarSP500Agent', 'WarOilAgent', 'WarLMTAgent',
     'WarNewsAgent', 'WarTelegramAgent', 'WarFearGreedAgent', 'WarMissileTrackerAgent',
-    'WarGoldAgent', 'WarGasAgent', 'WarDashboardAgent',
+    'WarDashboardAgent',
 ]
 
 
@@ -96,19 +96,19 @@ class Agent4:
 
     def _check_correlations(self, snap, queue):
         oil_chg = snap.get('oil_change') or 0
-        gas_chg = snap.get('gas_change') or 0
         now     = time.time()
 
-        # Oil AND Gas both up >3% → likely Hormuz escalation signal
-        if oil_chg > 3 and gas_chg > 3 and (now - self._last_hormuz_alert) > 3600:
+        # Oil up >5% → likely Hormuz escalation signal
+        # (Gas agent removed — was previously Oil+Gas correlation at >3% each)
+        if oil_chg > 5 and (now - self._last_hormuz_alert) > 3600:
             self._last_hormuz_alert = now
             _send_telegram(
                 f'⚠️ <b>WORKFLOW — Hormuz Escalation Signal</b>\n\n'
-                f'Oil {_chg(oil_chg)} and Gas {_chg(gas_chg)} both spiking.\n'
+                f'Oil {_chg(oil_chg)} spiking hard.\n'
                 f'Possible Strait of Hormuz escalation detected.\n'
                 f'🌐 <a href="https://vigilant-forgiveness-production-6c0f.up.railway.app">Dashboard</a>'
             )
-            self._post(queue, 'hormuz_signal', f'Hormuz signal: Oil {_chg(oil_chg)} + Gas {_chg(gas_chg)}')
+            self._post(queue, 'hormuz_signal', f'Hormuz signal: Oil {_chg(oil_chg)}')
 
     # ── Full status report ────────────────────────────────────────────────
 
@@ -130,8 +130,7 @@ class Agent4:
             f'₿  BTC:   {_fmt(snap["btc"])}  {_chg(snap["btc_change"])}\n'
             f'📊 SP500: {_fmt(snap["sp500"])}  {_chg(snap["sp500_change"])}\n'
             f'🛢 Oil:   {_fmt(snap["oil"])}  {_chg(snap["oil_change"])}\n'
-            f'🥇 Gold:  {_fmt(snap.get("gold"))}  {_chg(snap.get("gold_change"))}\n'
-            f'🔥 Gas:   {_fmt(snap.get("gas"), 3)}  {_chg(snap.get("gas_change"))}\n\n'
+            f'🛡 LMT:   {_fmt(snap.get("lmt"))}  {_chg(snap.get("lmt_change"))}\n\n'
             f'📰 <b>Latest:</b> {headline}\n\n'
             f'🌐 <a href="https://vigilant-forgiveness-production-6c0f.up.railway.app">Live Dashboard</a>'
         )
