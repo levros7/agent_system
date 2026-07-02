@@ -115,8 +115,9 @@ class WebDashboard:
                 pass
     
     def run(self):
-        """Start the Flask server."""
-        self.app.run(host='0.0.0.0', port=self.port, debug=False, use_reloader=False)
+        """Start the web server (waitress — production WSGI, works in a thread)."""
+        from waitress import serve
+        serve(self.app, host='0.0.0.0', port=self.port, threads=8)
     
     def get_dashboard_html(self):
         """Return the dashboard HTML."""
