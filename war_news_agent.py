@@ -46,7 +46,7 @@ class WarNewsAgent:
                         self.state.ping_agent(self.name)
                     continue
 
-                q   = urllib.parse.quote('Iran Israel war 2026')
+                q   = urllib.parse.quote('Iran Israel')
                 url = f'https://gnews.io/api/v4/search?q={q}&lang=en&max=5&sortby=publishedAt&apikey={GNEWS_KEY}'
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=8) as r:
